@@ -255,6 +255,23 @@ def build_web(bp: Blueprint) -> None:
         )
 
 
+# Spliced into every rendered page so readers can get back to the landing page.
+# plasTeX has no notion of the multi-blueprint landing page, so we inject it
+# after rendering. The marker keeps the pass idempotent across rebuilds.
+HOME_LINK_MARKER = 'class="bp-home-link"'
+HOME_LINK_HTML = '\n<a class="bp-home-link" href="../index.html">← All blueprints</a>'
+
+
+def inject_home_link(dest: Path) -> None:
+    """Add a 'back to all blueprints' link to each generated HTML page's header."""
+    for html in dest.rglob("*.html"):
+        text = html.read_text(encoding="utf-8")
+        if HOME_LINK_MARKER in text or "<header>" not in text:
+            continue
+        text = text.replace("<header>", "<header>" + HOME_LINK_HTML, 1)
+        html.write_text(text, encoding="utf-8")
+
+
 def copy_to_site(bp: Blueprint) -> None:
     """Copy the rendered blueprint (and PDF, if any) into ``site/<name>/``."""
     dest = SITE_DIR / bp.name
@@ -265,6 +282,8 @@ def copy_to_site(bp: Blueprint) -> None:
     pdf = bp.print_dir / "print.pdf"
     if bp.build_pdf and pdf.is_file():
         shutil.copy(pdf, dest / "blueprint.pdf")
+
+    inject_home_link(dest)
 
 
 def build_blueprint(bp: Blueprint) -> None:

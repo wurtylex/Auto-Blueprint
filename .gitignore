@@ -19,3 +19,6 @@ venv/
 .DS_Store
 
 Papers/
+
+# Local scratch notes (not part of the project)
+notes/
